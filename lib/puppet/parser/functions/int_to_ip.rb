@@ -7,21 +7,31 @@ module Puppet::Parser::Functions
     ENDHEREDOC
     ) do |args|
 
-    unless args.length == 1 then
-      raise Puppet::ParseError, ("int_to_ip(): wrong number of arguments (#{args.length}; must be 1)")
+    if args.length > 2 or args.length < 1 then
+      raise Puppet::ParseError, ("int_to_ip(): wrong number of arguments (#{args.length}; must be 1 or 2)")
     end
-    arg = args[0]
-    myint = Integer(arg) rescue false
+    ip = args[0]
+    if args[1] then
+        family = args[1]
+    else
+        family = 'inet'
+    end
+    myint = Integer(ip) rescue false
     if myint == false then
-        raise Puppet::ParseError, ("#{arg.inspect} is not a integer. It looks to be a #{arg.class}")
+        raise Puppet::ParseError, ("#{ip.inspect} is not a integer. It looks to be a #{ip.class}")
     end
 
     begin
-      IPAddr.new(myint, Socket::AF_INET).to_s
+      if family == "inet" then
+        IPAddr.new(myint, Socket::AF_INET).to_s
+      elsif family == "inet6" then
+        IPAddr.new(myint, Socket::AF_INET6).to_s
+      else
+        raise Puppet::ParseError, ("#{family.inspect} should be inet|inet6")
+      end
     rescue ArgumentError => e
       raise Puppet::ParseError(e)
     end 
   end
 
 end
-
