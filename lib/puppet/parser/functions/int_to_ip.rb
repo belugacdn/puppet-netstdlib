@@ -7,14 +7,19 @@ module Puppet::Parser::Functions
     ENDHEREDOC
     ) do |args|
 
-    if args.length > 2 or args.length < 1 then
-      raise Puppet::ParseError, ("int_to_ip(): wrong number of arguments (#{args.length}; must be 1 or 2)")
+    if args.length > 3 or args.length < 1 then
+      raise Puppet::ParseError, ("int_to_ip(): wrong number of arguments (#{args.length}; must be 1-3)")
     end
     ip = args[0]
     if args[1] then
         family = args[1]
     else
         family = 'inet'
+    end
+    if args[2] then
+        output = args[2]
+    else
+        output = 'compact'
     end
     myint = Integer(ip) rescue false
     if myint == false then
@@ -23,15 +28,23 @@ module Puppet::Parser::Functions
 
     begin
       if family == "inet" then
-        IPAddr.new(myint, Socket::AF_INET).to_s
+        ipaddr = IPAddr.new(myint, Socket::AF_INET)
       elsif family == "inet6" then
-        IPAddr.new(myint, Socket::AF_INET6).to_s
+        ipaddr = IPAddr.new(myint, Socket::AF_INET6)
       else
-        raise Puppet::ParseError, ("#{family.inspect} should be inet|inet6")
+        raise Puppet::ParseError, ("family #{family.inspect} should be inet|inet6")
       end
     rescue ArgumentError => e
       raise Puppet::ParseError(e)
-    end 
+    end
+    if output == 'compact' then
+      ipaddr.to_s
+    elsif output == 'long' then
+      ipaddr.to_string
+    elsif output == 'bare' then
+      ipaddr.to_string.gsub(":", "")
+    else
+      raise Puppet::ParseError, ("output #{output.inspect} should be long|compact|bare")
+    end
   end
-
 end
